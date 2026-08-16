@@ -30,19 +30,35 @@ st.markdown("""
     padding-bottom: 6rem;
 }
 
+/* Header nempel di atas pas discroll. z-index tinggi biar nggak ketiban
+   konten chat yang lewat di bawahnya, background solid biar nggak
+   tembus pandang. */
+.sticky-header {
+    padding: 0.5rem 0 0.6rem 0;
+}
+.sticky-header > * {
+    width: 100%;
+    max-width: 700px;
+}
+/* Kasih jarak kosong di atas konten biar nggak ketiban header yang
+   sekarang "melayang" di luar aliran halaman biasa -- diatur langsung
+   di .block-container (padding-top: 8.5rem) di atas. Sesuaikan angka
+   itu kalau headernya kepotong atau jaraknya kerasa kurang/lebih. */
+
 /* ---------- Header ---------- */
 .masthead-title {
-    font-weight: 700;
-    font-size: 1.7rem;
-    color: #1A1A1A;
-    margin: 0;
+    font-weight: 700 !important;
+    font-size: 2rem !important;
+    color: #1A1A1A !important;
+    margin: 0 !important;
+    letter-spacing: -0.01em;
 }
 .provider-row {
     display: flex;
     gap: 0.45rem;
     flex-wrap: wrap;
     margin-top: 0.7rem;
-    margin-bottom: 1.3rem;
+    margin-bottom: 0.6rem;
 }
 .provider-chip {
     font-size: 0.72rem;
@@ -57,10 +73,14 @@ st.markdown("""
 .provider-chip-logo {
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
+    justify-content: center;
+    padding: 0.5rem 0.7rem;
+    background: #FFFFFF;
+    border: 1px solid #E7E7E9;
+    border-radius: 10px;
 }
 .provider-logo-img {
-    height: 16px;
+    height: 26px;
     width: auto;
     object-fit: contain;
 }
@@ -170,9 +190,9 @@ def buat_chip_penyedia(nama_label, nama_file):
             data_base64 = base64.b64encode(f.read()).decode()
         ekstensi = nama_file.split(".")[-1]
         return (
-            f'<span class="provider-chip provider-chip-logo">'
+            f'<span class="provider-chip provider-chip-logo" title="{nama_label}">'
             f'<img src="data:image/{ekstensi};base64,{data_base64}" '
-            f'alt="{nama_label}" class="provider-logo-img" /> {nama_label}</span>'
+            f'alt="{nama_label}" class="provider-logo-img" /></span>'
         )
     else:
         return f'<span class="provider-chip">{nama_label}</span>'
@@ -183,6 +203,7 @@ chip_indodana = buat_chip_penyedia("INDODANA", "indodana.png")
 chip_akulaku = buat_chip_penyedia("AKULAKU", "akulaku.png")
 
 st.markdown(f"""
+<div class="sticky-header">
 <p class="masthead-title">Tanya Fintech</p>
 <div class="provider-row">
     {chip_kredivo}
@@ -190,20 +211,21 @@ st.markdown(f"""
     {chip_akulaku}
 </div>
 <hr class="masthead-rule" />
+</div>
 """, unsafe_allow_html=True)
 
-# BUBBLE SAPAAN 
+# BUBBLE SAPAAN
 with st.chat_message("assistant"):
     st.markdown(
         "Halo! Aku bisa bantu jawab pertanyaan seputar **bunga, biaya, denda, "
-        "dan syarat pendaftaran** layanan *paylater* dari tiga penyedia — "
-        "Kredivo, Indodana, dan Akulaku — berdasarkan dokumen resmi mereka "
+        "dan syarat pendaftaran** layanan *paylater* dari tiga penyedia "
+        "(Kredivo, Indodana, dan Akulaku) berdasarkan dokumen resmi mereka "
         "(RIPLAY dan Syarat & Ketentuan).\n\n"
         "Cocok dipakai buat bandingin biaya sebelum kamu mutusin pakai salah "
         "satu layanan. Ada yang mau ditanyain?"
     )
 
-
+# CONTOH PROMPT LENGKAP
 with st.expander("💡 Lihat contoh pertanyaan lengkap", expanded=not st.session_state.get("messages")):
     st.markdown(
         "Contoh pertanyaan yang bisa langsung disalin dan disesuaikan "
