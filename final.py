@@ -1,3 +1,6 @@
+import base64
+import os
+
 import streamlit as st
 from app import tanya_ai
 
@@ -7,7 +10,7 @@ st.set_page_config(
     layout="centered",
 )
 
-# GAYA TAMPILAN -- clean, latar putih
+# GAYA TAMPILAN 
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap');
@@ -34,15 +37,11 @@ st.markdown("""
     color: #1A1A1A;
     margin: 0;
 }
-.masthead-sub {
-    font-size: 0.9rem;
-    color: #8A8A8E;
-    margin: 0.3rem 0 1rem 0;
-}
 .provider-row {
     display: flex;
     gap: 0.45rem;
     flex-wrap: wrap;
+    margin-top: 0.7rem;
     margin-bottom: 1.3rem;
 }
 .provider-chip {
@@ -54,6 +53,16 @@ st.markdown("""
     border: 1px solid #E7E7E9;
     border-radius: 6px;
     padding: 0.3rem 0.65rem;
+}
+.provider-chip-logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+.provider-logo-img {
+    height: 16px;
+    width: auto;
+    object-fit: contain;
 }
 .masthead-rule {
     border: none;
@@ -140,34 +149,73 @@ st.markdown("""
     color: #8A8A8E;
     font-size: 0.85rem;
 }
+
+/* Kotak contoh prompt (st.code) -- defaultnya digeser ke samping kayak
+   kode program, ini dipaksa turun ke bawah (wrap) karena isinya kalimat
+   biasa, bukan kode. Tombol salin bawaan tetap jalan normal. */
+[data-testid="stCode"] pre,
+[data-testid="stCode"] code {
+    white-space: pre-wrap !important;
+    word-break: break-word !important;
+    overflow-x: hidden !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
 # HEADER
-st.markdown("""
+def buat_chip_penyedia(nama_label, nama_file):
+    jalur = f"assets/{nama_file}"
+    if os.path.exists(jalur):
+        with open(jalur, "rb") as f:
+            data_base64 = base64.b64encode(f.read()).decode()
+        ekstensi = nama_file.split(".")[-1]
+        return (
+            f'<span class="provider-chip provider-chip-logo">'
+            f'<img src="data:image/{ekstensi};base64,{data_base64}" '
+            f'alt="{nama_label}" class="provider-logo-img" /> {nama_label}</span>'
+        )
+    else:
+        return f'<span class="provider-chip">{nama_label}</span>'
+
+
+chip_kredivo = buat_chip_penyedia("KREDIVO", "kredivo.png")
+chip_indodana = buat_chip_penyedia("INDODANA", "indodana.png")
+chip_akulaku = buat_chip_penyedia("AKULAKU", "akulaku.png")
+
+st.markdown(f"""
 <p class="masthead-title">Tanya Fintech</p>
-<p class="masthead-sub">Eksplorasi bunga, biaya, dan denda dari dokumen resmi penyedia</p>
 <div class="provider-row">
-    <span class="provider-chip">KREDIVO</span>
-    <span class="provider-chip">INDODANA</span>
-    <span class="provider-chip">AKULAKU</span>
+    {chip_kredivo}
+    {chip_indodana}
+    {chip_akulaku}
 </div>
 <hr class="masthead-rule" />
 """, unsafe_allow_html=True)
 
-kata_sandi_diatur = "APP_PASSWORD" in st.secrets if hasattr(st, "secrets") else False
+# BUBBLE SAPAAN 
+with st.chat_message("assistant"):
+    st.markdown(
+        "Halo! Aku bisa bantu jawab pertanyaan seputar **bunga, biaya, denda, "
+        "dan syarat pendaftaran** layanan *paylater* dari tiga penyedia — "
+        "Kredivo, Indodana, dan Akulaku — berdasarkan dokumen resmi mereka "
+        "(RIPLAY dan Syarat & Ketentuan).\n\n"
+        "Cocok dipakai buat bandingin biaya sebelum kamu mutusin pakai salah "
+        "satu layanan. Ada yang mau ditanyain?"
+    )
 
-if kata_sandi_diatur and not st.session_state.get("sudah_login", False):
-    st.markdown("##### Masukkan kode akses")
-    kode_masuk = st.text_input("Kode akses", type="password", label_visibility="collapsed")
-    if kode_masuk:
-        if kode_masuk == st.secrets["APP_PASSWORD"]:
-            st.session_state.sudah_login = True
-            st.rerun()
-        else:
-            st.error("Kode akses salah.")
-    st.stop()  # hentikan render halaman di sini kalau belum login
 
+with st.expander("💡 Lihat contoh pertanyaan lengkap", expanded=not st.session_state.get("messages")):
+    st.markdown(
+        "Contoh pertanyaan yang bisa langsung disalin dan disesuaikan "
+        "nominal/tenornya sesuai kebutuhanmu:"
+    )
+    st.code(
+        "Simulasikan dan hitungkan jika saya mau minjam Rp5.000.000 dengan "
+        "tenor 12 bulan di Kredivo, Akulaku, dan Indodana, mana yang paling "
+        "murah? Syarat dan ketentuannya apa aja untuk meminjam?",
+        language=None,
+    )
+    st.caption("Arahkan kursor ke kotak di atas untuk memunculkan ikon salin.")
 
 # STATE
 if "messages" not in st.session_state:
@@ -190,7 +238,6 @@ if not st.session_state.messages:
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
-
 
 # INPUT & JAWABAN
 prompt = st.chat_input("Tanya soal bunga, biaya, atau denda...")
